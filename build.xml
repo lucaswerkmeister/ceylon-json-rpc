@@ -1,0 +1,219 @@
+<project name="Ceylon JSON-RPC" basedir="." default="test">
+
+  <property file="build.properties" />
+  <property name="ceylon.verbosity" value="false"/>
+  <property name="ceylon.executable" value="${dist.bin.dir}/ceylon"/>
+  <property name="out.repo" location="modules"/>
+
+  <!-- Local repository -->
+  <property name="ceylon.repo.dir" location="${user.home}/.ceylon/repo" />
+
+  <path id="ant-tasks">
+    <pathelement location="${dist.libs.dir}/ceylon-ant.jar"/>
+  </path>
+
+  <typedef resource="com/redhat/ceylon/ant/antlib.xml" classpathref="ant-tasks"/>
+
+  <moduleset id="modules.source.ceylon">
+    <module name="de.lucaswerkmeister.ceylonJsonRpc"/>
+  </moduleset>
+  <moduleset id="modules.source.jvm">
+    <moduleset refid="modules.source.ceylon"/>
+    <!-- no native ("jvm") modules -->
+  </moduleset>
+  <moduleset id="modules.source.js">
+    <moduleset refid="modules.source.ceylon"/>
+    <!-- no native ("js") modules -->
+  </moduleset>
+  <moduleset id="modules.source.all">
+    <moduleset refid="modules.source.jvm"/>
+    <moduleset refid="modules.source.js"/>
+  </moduleset>
+
+  <moduleset id="modules.test.ceylon">
+    <module name="test.de.lucaswerkmeister.ceylonJsonRpc"/>
+  </moduleset>
+  <moduleset id="modules.test.jvm">
+    <moduleset refid="modules.test.ceylon"/>
+    <!-- no native ("jvm") test modules -->
+  </moduleset>
+  <moduleset id="modules.test.js">
+    <moduleset refid="modules.test.ceylon"/>
+    <!-- no native ("js") test modules -->
+  </moduleset>
+
+  <moduleset id="modules.all.ceylon">
+    <moduleset refid="modules.source.ceylon"/>
+    <moduleset refid="modules.test.ceylon"/>
+  </moduleset>
+  <moduleset id="modules.all.jvm">
+    <moduleset refid="modules.source.jvm"/>
+    <moduleset refid="modules.test.jvm"/>
+  </moduleset>
+  <moduleset id="modules.all.js">
+    <moduleset refid="modules.source.js"/>
+    <moduleset refid="modules.test.js"/>
+  </moduleset>
+
+  <target name="clean"
+          description="Deletes the modules directory">
+    <delete dir="${out.repo}"/>
+  </target>
+
+  <target name="compile-source-jvm"
+          description="Compiles the Ceylon JSON-RPC modules for the JVM backend">
+    <ceylon-compile executable="${ceylon.executable}"
+                    verbose="${ceylon.verbosity}"
+                    encoding="UTF-8"
+                    out="${out.repo}"
+                    pack200="true">
+      <moduleset refid="modules.source.jvm"/>
+    </ceylon-compile>
+  </target>
+
+  <target name="compile-source-js"
+          description="Compiles the Ceylon JSON-RPC modules for the JS backend">
+    <ceylon-compile-js executable="${ceylon.executable}"
+                       verbose="${ceylon.verbosity}"
+                       encoding="UTF-8"
+                       out="${out.repo}">
+      <moduleset refid="modules.source.js"/>
+    </ceylon-compile-js>
+  </target>
+
+  <target name="compile-test-jvm" depends="compile-source-jvm"
+          description="Compiles the Ceylon JSON-RPC test module for the JVM backend">
+    <ceylon-compile executable="${ceylon.executable}"
+                    verbose="${ceylon.verbosity}"
+                    encoding="UTF-8"
+                    out="${out.repo}"
+                    pack200="true">
+      <moduleset refid="modules.test.jvm"/>
+    </ceylon-compile>
+  </target>
+
+  <target name="compile-test-js" depends="compile-source-js"
+          description="Compiles the Ceylon JSON-RPC test modules for the JS backend">
+    <ceylon-compile-js executable="${ceylon.executable}"
+                       verbose="${ceylon.verbosity}"
+                       encoding="UTF-8"
+                       out="${out.repo}">
+      <moduleset refid="modules.test.js"/>
+    </ceylon-compile-js>
+  </target>
+
+  <target name="compile-jvm"
+          description="Compiles all the Ceylon JSON-RPC modules for the JVM backend">
+    <ceylon-compile executable="${ceylon.executable}"
+                    verbose="${ceylon.verbosity}"
+                    encoding="UTF-8"
+                    out="${out.repo}"
+                    pack200="true">
+      <moduleset refid="modules.all.jvm"/>
+    </ceylon-compile>
+  </target>
+
+  <target name="compile-js"
+          description="Compiles all the Ceylon JSON-RPC modules for the JS backend">
+    <ceylon-compile-js executable="${ceylon.executable}"
+                       verbose="${ceylon.verbosity}"
+                       encoding="UTF-8"
+                       out="${out.repo}">
+      <moduleset refid="modules.all.js"/>
+    </ceylon-compile-js>
+  </target>
+
+  <target name="compile" depends="compile-jvm,compile-js"
+          description="Compiles all the Ceylon JSON-RPC modules"/>
+
+  <target name="test-jvm" depends="compile-jvm"
+          description="Tests Ceylon JSON-RPC on the JVM backend">
+    <ceylon-test>
+      <moduleset refid="modules.test.jvm"/>
+    </ceylon-test>
+  </target>
+
+  <target name="test-js" depends="compile-js"
+          description="Tests Ceylon JSON-RPC on the JS backend">
+    <ceylon-test-js>
+      <moduleset refid="modules.test.js"/>
+    </ceylon-test-js>
+  </target>
+
+  <target name="test" depends="test-jvm,test-js"
+          description="Tests Ceylon JSON-RPC"/>
+
+  <target name="doc"
+          description="Documents the Ceylon JSON-RPC modules">
+    <ceylon-doc executable="${ceylon.executable}"
+                includesourcecode="true"
+                nomtimecheck="true"
+                encoding="UTF-8">
+      <moduleset refid="modules.source.all"/>
+      <linkset>
+        <link pattern="ceylon" url="https://modules.ceylon-lang.org/repo/1/"/>
+      </linkset>
+    </ceylon-doc>
+
+  </target>
+
+  <target name="publish-jvm" depends="compile-source-jvm,doc"
+          description="Copies the Ceylon JSON-RPC modules for the JVM backend to the user's repository">
+    <copy todir="${ceylon.repo.dir}" overwrite="true">
+      <fileset dir="${out.repo}">
+        <include name="de/lucaswerkmeister/ceylonJsonRpc/**"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="publish-js" depends="compile-source-js,doc"
+          description="Copies the Ceylon JSON-RPC modules for the JS backend to the user's repository">
+    <copy todir="${ceylon.repo.dir}" overwrite="true">
+      <fileset dir="${out.repo}">
+        <include name="de/lucaswerkmeister/ceylonJsonRpc/**"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="publish" depends="publish-jvm,publish-js"
+          description="Copies the Ceylon JSON-RPC modules to the user's repository"/>
+
+  <target name="publish-herd">
+    <fail message="Please specify a target Herd upload repo url with -Dherd.repo=..." unless="herd.repo"/>
+    <fail message="Please specify a target Herd user name with -Dherd.user=..." unless="herd.user"/>
+    <fail message="Please specify a target Herd password with -Dherd.pass=..." unless="herd.pass"/>
+
+    <ceylon-compile executable="${ceylon.executable}"
+                    verbose="${ceylon.verbosity}"
+                    out="${herd.repo}"
+                    user="${herd.user}"
+                    pass="${herd.pass}"
+                    encoding="UTF-8">
+      <moduleset refid="modules.source.jvm"/>
+    </ceylon-compile>
+
+    <ceylon-compile-js executable="${ceylon.executable}"
+                       verbose="${ceylon.verbosity}"
+                       out="${herd.repo}"
+                       user="${herd.user}"
+                       pass="${herd.pass}"
+                       encoding="UTF-8">
+      <moduleset refid="modules.source.js"/>
+    </ceylon-compile-js>
+
+    <ceylon-doc executable="${ceylon.executable}"
+                includesourcecode="true"
+                nomtimecheck="true"
+                out="${herd.repo}"
+                user="${herd.user}"
+                pass="${herd.pass}"
+                encoding="UTF-8">
+      <moduleset refid="modules.source.all"/>
+      <linkset>
+        <link pattern="ceylon" url="https://modules.ceylon-lang.org/repo/1/"/>
+      </linkset>
+    </ceylon-doc>
+
+  </target>
+
+</project>
