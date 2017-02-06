@@ -1,12 +1,6 @@
-"This module implements [JSON-RPC] for Ceylon
- (specifically, [JSON-RPC 2.0]).
- 
- For a toplevel function to be eligible for JSON-RPC,
- it must have no type parameters and
- all of its required parameters must have types
- that can be deserialized from JSON,
- and it must have a return type
- that can be serialized to JSON.
+"This module implements simple serialization and deserialization
+ of types that map cleanly to JSON,
+ for use in [JSON-RPC].
  
  The following types can be deserialized from JSON:
  
@@ -66,8 +60,7 @@
  (No attempt is made to detect circular references –
  they result in a stack overflow.)
  
- [JSON-RPC]: http://www.jsonrpc.org/
- [JSON-RPC 2.0]: http://www.jsonrpc.org/specification"
-module de.lucaswerkmeister.ceylonJsonRpc "1.0.0-SNAPSHOT" {
+ [JSON-RPC]: http://www.jsonrpc.org/"
+module de.lucaswerkmeister.ceylonJsonRpc.serialization "1.0.0-SNAPSHOT" {
     shared import ceylon.json "1.3.1";
 }

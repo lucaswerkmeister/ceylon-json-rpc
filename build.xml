@@ -15,7 +15,8 @@
   <typedef resource="com/redhat/ceylon/ant/antlib.xml" classpathref="ant-tasks"/>
 
   <moduleset id="modules.source.ceylon">
-    <module name="de.lucaswerkmeister.ceylonJsonRpc"/>
+    <module name="de.lucaswerkmeister.ceylonJsonRpc.serialization"/>
+    <module name="de.lucaswerkmeister.ceylonJsonRpc.server"/>
   </moduleset>
   <moduleset id="modules.source.jvm">
     <moduleset refid="modules.source.ceylon"/>
@@ -31,7 +32,8 @@
   </moduleset>
 
   <moduleset id="modules.test.ceylon">
-    <module name="test.de.lucaswerkmeister.ceylonJsonRpc"/>
+    <module name="test.de.lucaswerkmeister.ceylonJsonRpc.serialization"/>
+    <module name="test.de.lucaswerkmeister.ceylonJsonRpc.server"/>
   </moduleset>
   <moduleset id="modules.test.jvm">
     <moduleset refid="modules.test.ceylon"/>
