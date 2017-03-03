@@ -95,3 +95,51 @@ shared void serializePrimitiveArrayArray(Anything[][] val, Type<Anything[][]> ty
         actual = serialize(val, type);
     };
 }
+
+shared [Anything, Type<Anything>][] primitiveUnions = [
+    ["", `String|Integer`],
+    ["", `Integer|String`],
+    [0, `Float|String|Integer`],
+    [13.37, `Integer|String|Float`],
+    [true, `String|Boolean`],
+    [null, `Float?`]
+];
+
+test
+parameters (`value primitiveUnions`)
+shared void serializePrimitiveUnion(Anything val, Type<Anything> type) {
+    assertEquals {
+        expected = val;
+        actual = serialize(val, type);
+    };
+}
+
+shared [Anything[], Type<Anything[]>, Value][] primitiveArrayUnions = [
+    [[""], `String[]|Integer[]`, JsonArray { "" }],
+    [[1, 2], `Float[]|String[]|Integer[]`, JsonArray { 1, 2 }],
+    [[null], `Float[]|Null[]`, JsonArray { null }]
+];
+
+test
+parameters (`value primitiveArrayUnions`)
+shared void serializePrimitiveArrayUnion(Anything[] val, Type<Anything[]> type, Value expected) {
+    assertEquals {
+        expected = expected;
+        actual = serialize(val, type);
+    };
+}
+
+shared [Anything, Type<Anything>, Value][] primitiveUnionArrays = [
+    [["", 1], `<String|Integer>[]`, JsonArray { "", 1 }],
+    [["foo", "bar", null], `String?[]`, JsonArray { "foo", "bar", null }],
+    [[true, "strict", 17], `<Boolean|String|Integer>[]`, JsonArray { true, "strict", 17 }]
+];
+
+test
+parameters (`value primitiveUnionArrays`)
+shared void serializePrimitiveUnionArray(Anything val, Type<Anything> type, Value expected) {
+    assertEquals {
+        expected = expected;
+        actual = serialize(val, type);
+    };
+}
