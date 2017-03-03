@@ -2,7 +2,10 @@ import ceylon.language.meta.model {
     Type
 }
 import ceylon.json {
+    JsonArray,
+    JsonObject,
     StringEmitter,
+    Value,
     parse,
     visit
 }
@@ -55,5 +58,40 @@ shared void serializePrimitiveViaString(Anything val, Type<Anything> type) {
             value parsed = parse(emitter.string);
             return parsed;
         }
+    };
+}
+
+shared [Anything[], Type<Anything[]>, Value][] primitiveArrays = [
+    [["", "Hello, World!"], `String[]`, JsonArray { "", "Hello, World!" }],
+    [["\{#0000}", "\{ELEPHANT}"], `[String+]`, JsonArray { "\{#0000}", "\{ELEPHANT}" }],
+    [[42, 13, 37], `Integer[]`, JsonArray { 42, 13, 37 }],
+    [[4.2, 13.37], `Float[]`, JsonArray { 4.2, 13.37 }],
+    [[true, false], `Boolean[]`, JsonArray { true, false }],
+    [[null, null], `[Null+]`, JsonArray { null, null }],
+    [[], `String[]`, JsonArray {}]    
+];
+
+test
+parameters (`value primitiveArrays`)
+shared void serializePrimitiveArray(Anything[] val, Type<Anything[]> type, Value expected) {
+    assertEquals {
+        expected = expected;
+        actual = serialize(val, type);
+    };
+}
+
+shared [Anything[][], Type<Anything[][]>, Value][] primitiveArrayArrays = [
+    [[["", "Hello, World!"]], `String[][]`, JsonArray { JsonArray { "", "Hello, World!" } }],
+    [[["\{#0000}"], ["\{ELEPHANT}"]], `[[String+]+]`, JsonArray { JsonArray { "\{#0000}" }, JsonArray { "\{ELEPHANT}" } }],
+    [[], `String[][]`, JsonArray {}],
+    [[[]], `String[][]`, JsonArray { JsonArray {} }]
+];
+
+test
+parameters (`value primitiveArrayArrays`)
+shared void serializePrimitiveArrayArray(Anything[][] val, Type<Anything[][]> type, Value expected) {
+    assertEquals {
+        expected = expected;
+        actual = serialize(val, type);
     };
 }
