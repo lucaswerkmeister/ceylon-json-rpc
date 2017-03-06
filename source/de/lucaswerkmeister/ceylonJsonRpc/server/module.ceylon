@@ -17,6 +17,6 @@
  
  [JSON-RPC 2.0]: http://www.jsonrpc.org/specification"
 module de.lucaswerkmeister.ceylonJsonRpc.server "1.0.0-SNAPSHOT" {
-    shared import ceylon.json "1.3.1";
+    shared import ceylon.json "1.3.2";
     import de.lucaswerkmeister.ceylonJsonRpc.serialization "1.0.0-SNAPSHOT";
 }

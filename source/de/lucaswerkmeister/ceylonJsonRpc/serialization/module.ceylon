@@ -62,5 +62,5 @@
  
  [JSON-RPC]: http://www.jsonrpc.org/"
 module de.lucaswerkmeister.ceylonJsonRpc.serialization "1.0.0-SNAPSHOT" {
-    shared import ceylon.json "1.3.1";
+    shared import ceylon.json "1.3.2";
 }
