@@ -9,6 +9,10 @@ import ceylon.json {
     parse,
     visit
 }
+import ceylon.random {
+    DefaultRandom,
+    Random
+}
 import ceylon.test {
     assertEquals,
     assumeTrue,
@@ -19,38 +23,101 @@ import de.lucaswerkmeister.ceylonJsonRpc.serialization {
     serialize
 }
 
-shared [Anything, Type<Anything>][] primitives = [
-    // basic
-    ["", `String`],
-    [0, `Integer`],
-    [0.0, `Float`],
-    [true, `Boolean`],
-    [null, `Null`],
-    // corner cases
-    ["\{#0000}", `String`],
-    ["\{ELEPHANT}", `String`],
-    [runtime.maxIntegerValue, `Integer`],
-    [runtime.minIntegerValue, `Integer`],
-    [runtime.maxFloatValue, `Float`],
-    [runtime.minFloatValue, `Float`]
-    // Infinity and NaN are not valid JSON
-];
+Random random = DefaultRandom(0); // deterministic seed for deterministic tests
+
+"A single test case: Ceylon value, type, and serialized JSON value."
+shared alias Test => [Anything, Type<Anything>, Value];
+
+"Create a test where the serialized JSON value is identical to the Ceylon value."
+Test createIdentityTest(Value val, Type<Value> type)
+        => [val, type, val];
+
+"Turn the given sequence of [[values]] into a [[Sequential]] of the given [[element type|elementType]] (with the correct reified type argument)."
+Anything[] makeSequence(Anything[] values, Type<Anything> elementType) {
+    if (nonempty values) {
+        assert (is Array<out Anything> array = `new Array.ofSize`.invoke([elementType], values.size, values.first));
+        for (index->element in values.indexed.rest) {
+            `function Array.set`.memberInvoke(array, [], index, element);
+        }
+        return array.sequence();
+    } else {
+        return [];
+    }
+}
+
+"Compose zero or more tests into a test for a [[Sequential]] of those tests."
+Test composeSequentialTest(Test* elementTests) {
+    value elementType = elementTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>)) else `Anything[]`;
+    return [makeSequence(elementTests*.first, elementType), `interface Sequential`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
+}
+
+"Compose one or more tests into a test for a [[Sequence]] of those tests."
+Test composeSequenceTest(Test+ elementTests) {
+    value elementType = elementTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>));
+    return [makeSequence(elementTests*.first, elementType), `interface Sequence`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
+}
+
+"Compose one or more tests into a test for a union of those tests, with a randomly chosen test as the actual value."
+Test composeUnionTest(Test+ caseTests)
+        => let (actualTest = random.nextElement(caseTests))
+            [actualTest[0], caseTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>)), actualTest[2]];
+
+shared object tests {
+    
+    shared Test primitiveString = createIdentityTest("", `String`);
+    shared Test primitiveInteger = createIdentityTest(0, `Integer`);
+    shared Test primitiveFloat = createIdentityTest(0.0, `Float`);
+    shared Test primitiveBoolean = createIdentityTest(true, `Boolean`);
+    shared Test primitiveNull = createIdentityTest(null, `Null`);
+    shared Test[] primitiveTests = [primitiveString, primitiveInteger, primitiveFloat, primitiveBoolean, primitiveNull];
+    
+    shared Test cornerCaseNullString = createIdentityTest("\{#0000}", `String`);
+    shared Test cornerCaseNonBMPString = createIdentityTest("\{ELEPHANT}", `String`);
+    shared Test cornerCaseMaxInteger = createIdentityTest(runtime.maxIntegerValue, `Integer`);
+    shared Test cornerCaseMinInteger = createIdentityTest(runtime.minIntegerValue, `Integer`);
+    shared Test cornerCaseMaxFloat = createIdentityTest(runtime.maxFloatValue, `Float`);
+    shared Test cornerCaseMinFloat = createIdentityTest(runtime.minFloatValue, `Float`);
+    shared Test[] cornerCaseTests = [cornerCaseNullString, cornerCaseNonBMPString, cornerCaseMaxInteger, cornerCaseMinInteger, cornerCaseMaxFloat, cornerCaseMinFloat];
+    
+    shared Test arrayOfPrimitiveString = composeSequenceTest(primitiveString, cornerCaseNullString, cornerCaseNonBMPString);
+    shared Test arrayOfPrimitiveBoolean = composeSequentialTest(primitiveBoolean);
+    shared Test emptyArray = composeSequentialTest();
+    shared Test[] primitiveArrayTests = [arrayOfPrimitiveString, arrayOfPrimitiveBoolean, emptyArray];
+    
+    shared Test arrayOfArrayOfPrimitive = composeSequenceTest(arrayOfPrimitiveString);
+    
+    shared Test unionOfTwoPrimitives = composeUnionTest(primitiveString, primitiveInteger);
+    shared Test unionOfAllPrimitives = composeUnionTest(primitiveString, primitiveInteger, primitiveFloat, primitiveBoolean, primitiveNull);
+    shared Test[] primitiveUnionTests = [unionOfTwoPrimitives, unionOfAllPrimitives];
+    
+    shared Test[] allTests = concatenate(
+        primitiveTests,
+        cornerCaseTests,
+        primitiveArrayTests,
+        [arrayOfArrayOfPrimitive],
+        primitiveUnionTests
+    );
+}
+
+// work around ceylon/ceylon-sdk#635 – parameters (`value tests.allTests`) isn’t supported
+shared Test[] allTests => tests.allTests;
+shared Test[] primitiveTests => tests.primitiveTests;
 
 test
-parameters (`value primitives`)
-shared void serializePrimitive(Anything val, Type<Anything> type) {
+parameters (`value allTests`)
+shared void testSerialize(Anything val, Type<Anything> type, Value expected) {
     assertEquals {
-        expected = val;
+        expected = expected;
         actual = serialize(val, type);
     };
 }
 
 test
-parameters (`value primitives`)
-shared void serializePrimitiveViaString(Anything val, Type<Anything> type) {
+parameters (`value primitiveTests`)
+shared void testSerializeViaString(Anything val, Type<Anything> type, Anything expected) {
     assumeTrue(!Float.parse(1.0e21.string) is Exception); // ceylon/ceylon#6908
     assertEquals {
-        expected = val;
+        expected = expected;
         value actual {
             value serialized = serialize(val, type);
             value emitter = StringEmitter();
@@ -58,88 +125,5 @@ shared void serializePrimitiveViaString(Anything val, Type<Anything> type) {
             value parsed = parse(emitter.string);
             return parsed;
         }
-    };
-}
-
-shared [Anything[], Type<Anything[]>, Value][] primitiveArrays = [
-    [["", "Hello, World!"], `String[]`, JsonArray { "", "Hello, World!" }],
-    [["\{#0000}", "\{ELEPHANT}"], `[String+]`, JsonArray { "\{#0000}", "\{ELEPHANT}" }],
-    [[42, 13, 37], `Integer[]`, JsonArray { 42, 13, 37 }],
-    [[4.2, 13.37], `Float[]`, JsonArray { 4.2, 13.37 }],
-    [[true, false], `Boolean[]`, JsonArray { true, false }],
-    [[null, null], `[Null+]`, JsonArray { null, null }],
-    [[], `String[]`, JsonArray {}]    
-];
-
-test
-parameters (`value primitiveArrays`)
-shared void serializePrimitiveArray(Anything[] val, Type<Anything[]> type, Value expected) {
-    assertEquals {
-        expected = expected;
-        actual = serialize(val, type);
-    };
-}
-
-shared [Anything[][], Type<Anything[][]>, Value][] primitiveArrayArrays = [
-    [[["", "Hello, World!"]], `String[][]`, JsonArray { JsonArray { "", "Hello, World!" } }],
-    [[["\{#0000}"], ["\{ELEPHANT}"]], `[[String+]+]`, JsonArray { JsonArray { "\{#0000}" }, JsonArray { "\{ELEPHANT}" } }],
-    [[], `String[][]`, JsonArray {}],
-    [[[]], `String[][]`, JsonArray { JsonArray {} }]
-];
-
-test
-parameters (`value primitiveArrayArrays`)
-shared void serializePrimitiveArrayArray(Anything[][] val, Type<Anything[][]> type, Value expected) {
-    assertEquals {
-        expected = expected;
-        actual = serialize(val, type);
-    };
-}
-
-shared [Anything, Type<Anything>][] primitiveUnions = [
-    ["", `String|Integer`],
-    ["", `Integer|String`],
-    [0, `Float|String|Integer`],
-    [13.37, `Integer|String|Float`],
-    [true, `String|Boolean`],
-    [null, `Float?`]
-];
-
-test
-parameters (`value primitiveUnions`)
-shared void serializePrimitiveUnion(Anything val, Type<Anything> type) {
-    assertEquals {
-        expected = val;
-        actual = serialize(val, type);
-    };
-}
-
-shared [Anything[], Type<Anything[]>, Value][] primitiveArrayUnions = [
-    [[""], `String[]|Integer[]`, JsonArray { "" }],
-    [[1, 2], `Float[]|String[]|Integer[]`, JsonArray { 1, 2 }],
-    [[null], `Float[]|Null[]`, JsonArray { null }]
-];
-
-test
-parameters (`value primitiveArrayUnions`)
-shared void serializePrimitiveArrayUnion(Anything[] val, Type<Anything[]> type, Value expected) {
-    assertEquals {
-        expected = expected;
-        actual = serialize(val, type);
-    };
-}
-
-shared [Anything, Type<Anything>, Value][] primitiveUnionArrays = [
-    [["", 1], `<String|Integer>[]`, JsonArray { "", 1 }],
-    [["foo", "bar", null], `String?[]`, JsonArray { "foo", "bar", null }],
-    [[true, "strict", 17], `<Boolean|String|Integer>[]`, JsonArray { true, "strict", 17 }]
-];
-
-test
-parameters (`value primitiveUnionArrays`)
-shared void serializePrimitiveUnionArray(Anything val, Type<Anything> type, Value expected) {
-    assertEquals {
-        expected = expected;
-        actual = serialize(val, type);
     };
 }
