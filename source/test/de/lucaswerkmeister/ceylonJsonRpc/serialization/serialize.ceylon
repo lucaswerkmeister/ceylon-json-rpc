@@ -80,6 +80,11 @@ shared class Company(name, head, residence) satisfies Named & Resident {
     shared actual String residence;
     string => "``name``, of ``residence``; head of company: ``head``";
 }
+shared object god satisfies Named & Resident {
+    shared actual String name = "God";
+    shared actual String residence = "Heaven";
+    shared Null superior = null;
+}
 
 Test createPersonTest(String name, String residence)
         => [Person(name, residence), `Person`, JsonObject { "name"->name, "residence"->residence }];
@@ -138,9 +143,12 @@ shared object tests {
     shared Test classCompanyDA = composeCompanyTest("Dumbledore’s Army", classPersonHarry, "The Room of Requirements, Hogwarts, Great Britain");
     shared Test[] classCompanyTests = [classCompanyRedBooks, classCompanyDA];
     
+    shared Test objectGod = [god, `\Igod`, JsonObject { "name"->god.name, "residence"->god.residence, "superior"->god.superior }];
+    
     shared Test interfaceNamedBilbo = composeNamedTest(classPersonBilbo);
     shared Test interfaceResidentDA = composeResidentTest(classCompanyDA);
-    shared Test[] interfaceTests = [interfaceNamedBilbo, interfaceResidentDA];
+    shared Test interfaceNamedGod = composeNamedTest(objectGod);
+    shared Test[] interfaceTests = [interfaceNamedBilbo, interfaceResidentDA, interfaceNamedGod];
     
     shared Test[] allTests = concatenate(
         primitiveTests,
@@ -150,6 +158,7 @@ shared object tests {
         primitiveUnionTests,
         classPersonTests,
         classCompanyTests,
+        [objectGod],
         interfaceTests
     );
 }
