@@ -4,3 +4,7 @@
 
 # build files
 /modules
+
+# IDEs
+/.idea
+/*.iml
