@@ -88,6 +88,20 @@ Test composeCompanyTest(String name, Test head, String residence) {
     return [Company(name, headPerson, residence), `Company`, JsonObject { "name"->name, "head" -> head[2], "residence"->residence }];
 }
 
+"Compose a test into a test with the same value but a supertype of the original test’s type,
+ which only contains a subset of the original test’s attributes."
+Test composeSupertypeTest(Test test, Type<Anything> supertype, String* attributes) {
+    assert (supertype.supertypeOf(test[1]));
+    assert (is JsonObject json = test[2],
+        attributes.every(json.defines));
+    return [test[0], supertype, JsonObject(zipEntries(attributes, attributes.map(json.get)))];
+}
+
+Test composeNamedTest(Test test)
+        => composeSupertypeTest(test, `Named`, "name");
+Test composeResidentTest(Test test)
+        => composeSupertypeTest(test, `Resident`, "residence");
+
 shared object tests {
     
     shared Test primitiveString = createIdentityTest("", `String`);
@@ -124,6 +138,10 @@ shared object tests {
     shared Test classCompanyDA = composeCompanyTest("Dumbledore’s Army", classPersonHarry, "The Room of Requirements, Hogwarts, Great Britain");
     shared Test[] classCompanyTests = [classCompanyRedBooks, classCompanyDA];
     
+    shared Test interfaceNamedBilbo = composeNamedTest(classPersonBilbo);
+    shared Test interfaceResidentDA = composeResidentTest(classCompanyDA);
+    shared Test[] interfaceTests = [interfaceNamedBilbo, interfaceResidentDA];
+    
     shared Test[] allTests = concatenate(
         primitiveTests,
         cornerCaseTests,
@@ -131,7 +149,8 @@ shared object tests {
         [arrayOfArrayOfPrimitive],
         primitiveUnionTests,
         classPersonTests,
-        classCompanyTests
+        classCompanyTests,
+        interfaceTests
     );
 }
 
