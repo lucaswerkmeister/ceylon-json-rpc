@@ -26,7 +26,7 @@
  
  - JSON primitive types, as above;
  - [[Sequential]] and [[Sequence]], as above;
- - toplevel classes, interfaces or objects without type parameters
+ - toplevel classes or interfaces without type parameters
    where every shared value has a type that can be serialized to JSON; and
  - unions of types that can be serialized to JSON.
  
