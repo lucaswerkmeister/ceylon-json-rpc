@@ -62,6 +62,32 @@ Test composeUnionTest(Test+ caseTests)
         => let (actualTest = random.nextElement(caseTests))
             [actualTest[0], caseTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>)), actualTest[2]];
 
+shared interface Named {
+    shared formal String name;
+}
+shared interface Resident {
+    aliased ("address")
+    shared formal String? residence;
+}
+shared class Person(name, residence) satisfies Named & Resident {
+    shared actual String name;
+    shared actual String? residence;
+    string => if (exists residence) then "``name``, of ``residence``" else name;
+}
+shared class Company(name, head, residence) satisfies Named & Resident {
+    shared actual String name;
+    shared Person head;
+    shared actual String residence;
+    string => "``name``, of ``residence``; head of company: ``head``";
+}
+
+Test createPersonTest(String name, String residence)
+        => [Person(name, residence), `Person`, JsonObject { "name"->name, "residence"->residence }];
+Test composeCompanyTest(String name, Test head, String residence) {
+    assert (is Person headPerson = head[0]);
+    return [Company(name, headPerson, residence), `Company`, JsonObject { "name"->name, "head" -> head[2], "residence"->residence }];
+}
+
 shared object tests {
     
     shared Test primitiveString = createIdentityTest("", `String`);
@@ -90,12 +116,22 @@ shared object tests {
     shared Test unionOfAllPrimitives = composeUnionTest(primitiveString, primitiveInteger, primitiveFloat, primitiveBoolean, primitiveNull);
     shared Test[] primitiveUnionTests = [unionOfTwoPrimitives, unionOfAllPrimitives];
     
+    shared Test classPersonBilbo = createPersonTest("Bilbo Baggins", "Bag End, Underhill, The Shire");
+    shared Test classPersonHarry = createPersonTest("Harry James Potter", "Cupboard under the Stairs, Number 4, Privet Drive, Little Whinging, Surrey");
+    shared Test[] classPersonTests = [classPersonBilbo, classPersonHarry];
+    
+    shared Test classCompanyRedBooks = composeCompanyTest("Red Book Publishing House", classPersonBilbo, "Imladris (Rivendell)");
+    shared Test classCompanyDA = composeCompanyTest("Dumbledore’s Army", classPersonHarry, "The Room of Requirements, Hogwarts, Great Britain");
+    shared Test[] classCompanyTests = [classCompanyRedBooks, classCompanyDA];
+    
     shared Test[] allTests = concatenate(
         primitiveTests,
         cornerCaseTests,
         primitiveArrayTests,
         [arrayOfArrayOfPrimitive],
-        primitiveUnionTests
+        primitiveUnionTests,
+        classPersonTests,
+        classCompanyTests
     );
 }
 
