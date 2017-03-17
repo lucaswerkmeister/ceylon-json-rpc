@@ -5,7 +5,7 @@ import ceylon.json {
     JsonArray,
     JsonObject,
     StringEmitter,
-    Value,
+    JsonValue=Value,
     parse,
     visit
 }
@@ -26,10 +26,10 @@ import de.lucaswerkmeister.ceylonJsonRpc.serialization {
 Random random = DefaultRandom(0); // deterministic seed for deterministic tests
 
 "A single test case: Ceylon value, type, and serialized JSON value."
-shared alias Test => [Anything, Type<Anything>, Value];
+shared alias Test => [Anything, Type<Anything>, JsonValue];
 
 "Create a test where the serialized JSON value is identical to the Ceylon value."
-Test createIdentityTest(Value val, Type<Value> type)
+Test createIdentityTest(JsonValue val, Type<JsonValue> type)
         => [val, type, val];
 
 "Turn the given sequence of [[values]] into a [[Sequential]] of the given [[element type|elementType]] (with the correct reified type argument)."
@@ -105,7 +105,7 @@ shared Test[] primitiveTests => tests.primitiveTests;
 
 test
 parameters (`value allTests`)
-shared void testSerialize(Anything val, Type<Anything> type, Value expected) {
+shared void testSerialize(Anything val, Type<Anything> type, JsonValue expected) {
     assertEquals {
         expected = expected;
         actual = serialize(val, type);
