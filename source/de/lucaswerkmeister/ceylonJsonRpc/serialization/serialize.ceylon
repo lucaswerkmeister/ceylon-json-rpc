@@ -1,7 +1,10 @@
 import ceylon.language.meta.model {
+    Class,
+    ClassOrInterface,
     Interface,
     Type,
-    UnionType
+    UnionType,
+    Value
 }
 import ceylon.json {
     JsonArray,
@@ -28,6 +31,23 @@ shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
         }
         return JsonArray(val.map(serializeElement));
     }
+    if (is Class<Anything,Nothing>|Interface<Anything>|Value<Anything,Nothing> type) {
+        ClassOrInterface<Anything> actualType;
+        switch (type)
+        case (is ClassOrInterface<Anything>) {
+            assert (type.typeArguments.empty);
+            actualType = type;
+        }
+        case (is Value<Anything,Nothing>) {
+            assert (exists objectClass = type.declaration.objectClass);
+            actualType = objectClass.apply();
+        }
+        return JsonObject {
+            for (attribute in actualType.getAttributes<Nothing,Anything,Nothing>())
+                if (!`Object`.getAttribute<Nothing,Anything,Nothing>(attribute.declaration.name) exists)
+                    attribute.declaration.name -> serialize<Anything>(attribute.bind(val).get(), attribute.type)
+        };
+    }
     if (is UnionType<Anything> type) {
         for (caseType in type.caseTypes) {
             try {
@@ -43,5 +63,5 @@ shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
             throw AssertionError("Unable to serialize value with any case type");
         }
     }
-    assert (false);
+    throw AssertionError("Type cannot be serialized to JSON: ``type``");
 }
