@@ -123,6 +123,7 @@ shared object tests {
     shared Test cornerCaseMaxFloat = createIdentityTest(runtime.maxFloatValue, `Float`);
     shared Test cornerCaseMinFloat = createIdentityTest(runtime.minFloatValue, `Float`);
     shared Test[] cornerCaseTests = [cornerCaseNullString, cornerCaseNonBMPString, cornerCaseMaxInteger, cornerCaseMinInteger, cornerCaseMaxFloat, cornerCaseMinFloat];
+    shared Test[] allPrimitiveTests = concatenate(primitiveTests, cornerCaseTests);
     
     shared Test arrayOfPrimitiveString = composeSequenceTest(primitiveString, cornerCaseNullString, cornerCaseNonBMPString);
     shared Test arrayOfPrimitiveBoolean = composeSequentialTest(primitiveBoolean);
@@ -166,6 +167,7 @@ shared object tests {
 // work around ceylon/ceylon-sdk#635 – parameters (`value tests.allTests`) isn’t supported
 shared Test[] allTests => tests.allTests;
 shared Test[] primitiveTests => tests.primitiveTests;
+shared Test[] allPrimitiveTests => tests.allPrimitiveTests;
 
 test
 parameters (`value allTests`)
@@ -177,9 +179,10 @@ shared void testSerialize(Anything val, Type<Anything> type, JsonValue expected)
 }
 
 test
-parameters (`value primitiveTests`)
+parameters (`value allPrimitiveTests`)
 shared void testSerializeViaString(Anything val, Type<Anything> type, Anything expected) {
     assumeTrue(!Float.parse(1.0e21.string) is Exception); // ceylon/ceylon#6908
+    assumeTrue(if (is Integer val, val == runtime.minIntegerValue) then canParseRuntimeMinInteger else true); // ceylon/ceylon-sdk#655
     assertEquals {
         expected = expected;
         value actual {
@@ -190,4 +193,13 @@ shared void testSerializeViaString(Anything val, Type<Anything> type, Anything e
             return parsed;
         }
     };
+}
+
+Boolean canParseRuntimeMinInteger {
+    try {
+        parse(runtime.minIntegerValue.string);
+        return true;
+    } catch (AssertionError t) {
+        return false;
+    }
 }
