@@ -32,9 +32,9 @@ shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
     if (is Class<Anything,Nothing>|Interface<Anything> type) {
         assert (type.typeArguments.empty);
         return JsonObject {
-            for (attribute in type.getAttributes<Nothing,Anything,Nothing>())
-                if (!`Object`.getAttribute<Nothing,Anything,Nothing>(attribute.declaration.name) exists)
-                    attribute.declaration.name -> serialize<Anything>(attribute.bind(val).get(), attribute.type)
+            for (attribute in type.getAttributes<>())
+                if (!`Object`.getAttribute<>(attribute.declaration.name) exists)
+                    attribute.declaration.name -> serialize(attribute.bind(val).get(), attribute.type)
         };
     }
     if (is UnionType<Anything> type) {
