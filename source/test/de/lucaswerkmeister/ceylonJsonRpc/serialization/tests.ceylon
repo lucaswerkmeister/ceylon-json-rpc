@@ -20,6 +20,7 @@ import ceylon.test {
     test
 }
 import de.lucaswerkmeister.ceylonJsonRpc.serialization {
+    deserialize,
     serialize
 }
 
@@ -189,6 +190,31 @@ shared void testSerializeViaString(Anything val, Type<Anything> type, Anything e
             value serialized = serialize(val, type);
             value emitter = StringEmitter();
             visit(serialized, emitter);
+            value parsed = parse(emitter.string);
+            return parsed;
+        }
+    };
+}
+
+test
+parameters (`value allPrimitiveTests`) // TODO allTests
+shared void testDeserialize(Anything expected, Type<Anything> type, JsonValue val) {
+    assertEquals {
+        expected = expected;
+        actual = deserialize(val, type);
+    };
+}
+
+test
+parameters (`value allPrimitiveTests`)
+shared void testDeserializeViaString(Anything expected, Type<Anything> type, JsonValue val) {
+    assumeTrue(!Float.parse(1.0e21.string) is Exception); // ceylon/ceylon#6908
+    assumeTrue(if (is Integer val, val == runtime.minIntegerValue) then canParseRuntimeMinInteger else true); // ceylon/ceylon-sdk#655
+    assertEquals {
+        expected = expected;
+        value actual {
+            value emitter = StringEmitter();
+            visit(val, emitter);
             value parsed = parse(emitter.string);
             return parsed;
         }
