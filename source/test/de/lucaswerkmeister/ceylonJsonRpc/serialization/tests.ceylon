@@ -159,14 +159,17 @@ shared object tests {
     shared Test interfaceNamedGod = composeNamedTest(objectGod);
     shared Test[] interfaceTests = [interfaceNamedBilbo, interfaceResidentDA, interfaceNamedGod];
     
-    shared Test[] allTests = concatenate(
+    shared Test[] allDeserializableTests = concatenate(
         primitiveTests,
         cornerCaseTests,
         primitiveArrayTests,
         [arrayOfArrayOfPrimitive],
         primitiveUnionTests,
         classPersonTests,
-        classCompanyTests,
+        classCompanyTests
+    );
+    shared Test[] allTests = concatenate(
+        allDeserializableTests,
         [objectGod],
         interfaceTests
     );
@@ -174,6 +177,7 @@ shared object tests {
 
 // work around ceylon/ceylon-sdk#635 – parameters (`value tests.allTests`) isn’t supported
 shared Test[] allTests => tests.allTests;
+shared Test[] allDeserializableTests => tests.allDeserializableTests;
 shared Test[] primitiveTests => tests.primitiveTests;
 shared Test[] allPrimitiveTests => tests.allPrimitiveTests;
 
@@ -203,16 +207,8 @@ shared void testSerializeViaString(Anything val, Type<Anything> type, Anything e
     };
 }
 
-// TODO remove; testDeserialize should use allTests
-shared Test[] deserializeTests = concatenate(
-    tests.allPrimitiveTests,
-    tests.primitiveUnionTests,
-    tests.primitiveArrayTests,
-    [tests.arrayOfArrayOfPrimitive]
-);
-
 test
-parameters (`value deserializeTests`)
+parameters (`value allDeserializableTests`)
 shared void testDeserialize(Anything expected, Type<Anything> type, JsonValue val) {
     assertEquals {
         expected = expected;
