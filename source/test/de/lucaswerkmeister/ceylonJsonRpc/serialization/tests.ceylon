@@ -62,12 +62,31 @@ shared class Person(name, residence) satisfies Named & Resident {
     shared actual String name;
     shared actual String? residence;
     string => if (exists residence) then "``name``, of ``residence``" else name;
+    shared actual Boolean equals(Object that) {
+        if (is Person that) {
+            if (exists residence) {
+                if (exists residence_ = that.residence) {
+                    if (residence != residence_) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else if (that.residence exists) {
+                return false;
+            }
+            return name == that.name;
+        } else {
+            return false;
+        }
+    }
 }
 shared class Company(name, head, residence) satisfies Named & Resident {
     shared actual String name;
     shared Person head;
     shared actual String residence;
     string => "``name``, of ``residence``; head of company: ``head``";
+    equals(Object that) => if (is Company that) then name==that.name && head==that.head && residence==that.residence else false;
 }
 shared object god satisfies Named & Resident {
     shared actual String name = "God";
