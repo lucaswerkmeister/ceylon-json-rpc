@@ -12,13 +12,13 @@ import ceylon.json {
 
 "Deserialize a [[JSON value|val]] into a value of the given [[type]]."
 shared ValueType deserialize<ValueType>(JsonValue val, Type<ValueType> type) {
-    if (type in { `String`, `Integer`, `Float`, `Boolean`, `Null` }) {
+    if (type in jsonPrimitiveTypes) {
         assert (is ValueType val);
         return val;
     }
     if (is UnionType<Anything> type) {
         "Union type to deserialize must involve at most one class"
-        assert (type.caseTypes.narrow<Class<>>().shorterThan(2));
+        assert (type.caseTypes.narrow<Class<>>().filter(not(jsonPrimitiveTypes.contains)).shorterThan(2));
         for (caseType in type.caseTypes) {
             try {
                 assert (is ValueType deserialized = `function deserialize`.invoke {

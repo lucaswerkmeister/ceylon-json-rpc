@@ -4,7 +4,7 @@
  
  The following types can be deserialized from JSON:
  
- - JSON primitive types:
+ - [[JSON primitive types|jsonPrimitiveTypes]]:
    [[String]], [[Integer]], [[Float]], [[Boolean]], [[Null]];
  - [[Sequential]] or [[Sequence]] of a type
    that can be deserialized from JSON
@@ -24,7 +24,7 @@
  
  The following types can be serialized to JSON:
  
- - JSON primitive types, as above;
+ - [[JSON primitive types|jsonPrimitiveTypes]], as above;
  - [[Sequential]] and [[Sequence]], as above;
  - toplevel classes or interfaces without type parameters
    where every shared value has a type that can be serialized to JSON; and

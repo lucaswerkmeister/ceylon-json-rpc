@@ -12,7 +12,7 @@ import ceylon.json {
 
 "Serialize a [[value|val]] of the given [[type]] into a JSON [[Value|JsonValue]]."
 shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
-    if (type in { `String`, `Integer`, `Float`, `Boolean`, `Null` }) {
+    if (type in jsonPrimitiveTypes) {
         assert (is JsonValue val);
         return val;
     }
