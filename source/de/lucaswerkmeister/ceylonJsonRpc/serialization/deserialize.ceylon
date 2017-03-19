@@ -1,4 +1,5 @@
 import ceylon.language.meta.model {
+    CallableConstructor,
     Class,
     Interface,
     Type,
@@ -29,6 +30,16 @@ shared ValueType deserialize<ValueType>(JsonValue val, Type<ValueType> type) {
         Anything[] deserialized = val.collect(deserializeElement);
         assert (is ValueType deserializedOfType = makeSequenceOfType(deserialized, elementType));
         return deserializedOfType;
+    }
+    if (is Class<Anything,Nothing> type) {
+        assert (type.typeArguments.empty);
+        assert (is JsonObject val);
+        assert (is CallableConstructor<Anything,Nothing> constructor = type.getConstructor<Nothing>("ofJSON") else type.defaultConstructor);
+        assert (is ValueType deserialized = constructor.namedApply {
+                for (paramName->paramType in zipEntries(constructor.declaration.parameterDeclarations*.name, constructor.parameterTypes))
+                    paramName -> deserialize(val[paramName], paramType)
+            });
+        return deserialized;
     }
     if (is UnionType<Anything> type) {
         "Union type to deserialize must involve at most one class"
