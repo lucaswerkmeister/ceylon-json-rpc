@@ -21,6 +21,7 @@ import ceylon.test {
 }
 import de.lucaswerkmeister.ceylonJsonRpc.serialization {
     deserialize,
+    makeSequenceOfType,
     serialize
 }
 
@@ -33,29 +34,16 @@ shared alias Test => [Anything, Type<Anything>, JsonValue];
 Test createIdentityTest(JsonValue val, Type<JsonValue> type)
         => [val, type, val];
 
-"Turn the given sequence of [[values]] into a [[Sequential]] of the given [[element type|elementType]] (with the correct reified type argument)."
-Anything[] makeSequence(Anything[] values, Type<Anything> elementType) {
-    if (nonempty values) {
-        assert (is Array<out Anything> array = `new Array.ofSize`.invoke([elementType], values.size, values.first));
-        for (index->element in values.indexed.rest) {
-            `function Array.set`.memberInvoke(array, [], index, element);
-        }
-        return array.sequence();
-    } else {
-        return [];
-    }
-}
-
 "Compose zero or more tests into a test for a [[Sequential]] of those tests."
 Test composeSequentialTest(Test* elementTests) {
     value elementType = elementTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>)) else `Anything[]`;
-    return [makeSequence(elementTests*.first, elementType), `interface Sequential`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
+    return [makeSequenceOfType(elementTests*.first, elementType), `interface Sequential`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
 }
 
 "Compose one or more tests into a test for a [[Sequence]] of those tests."
 Test composeSequenceTest(Test+ elementTests) {
     value elementType = elementTests*.rest*.first.reduce(uncurry<Type<Anything>,Type<Anything>,Type<Anything>,[Type<Anything>]>(Type.union<Anything>));
-    return [makeSequence(elementTests*.first, elementType), `interface Sequence`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
+    return [makeSequenceOfType(elementTests*.first, elementType), `interface Sequence`.interfaceApply<Anything>(elementType), JsonArray { for (elementTest in elementTests) elementTest[2] }];
 }
 
 "Compose one or more tests into a test for a union of those tests, with a randomly chosen test as the actual value."
