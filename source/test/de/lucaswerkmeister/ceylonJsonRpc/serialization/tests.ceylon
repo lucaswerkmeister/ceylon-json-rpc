@@ -196,8 +196,14 @@ shared void testSerializeViaString(Anything val, Type<Anything> type, Anything e
     };
 }
 
+// TODO remove; testDeserialize should use allTests
+shared Test[] deserializeTests = concatenate(
+    tests.allPrimitiveTests,
+    tests.primitiveUnionTests
+);
+
 test
-parameters (`value allPrimitiveTests`) // TODO allTests
+parameters (`value deserializeTests`)
 shared void testDeserialize(Anything expected, Type<Anything> type, JsonValue val) {
     assertEquals {
         expected = expected;
