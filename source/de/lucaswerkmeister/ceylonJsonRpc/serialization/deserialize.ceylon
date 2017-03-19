@@ -16,6 +16,20 @@ shared ValueType deserialize<ValueType>(JsonValue val, Type<ValueType> type) {
         assert (is ValueType val);
         return val;
     }
+    if (is Interface<Anything> type,
+        type.declaration in { `interface Sequential`, `interface Sequence` }) {
+        assert (is JsonArray val);
+        assert (exists elementType = type.typeArgumentList[0]);
+        Anything deserializeElement(JsonValue element) {
+            return `function deserialize`.invoke {
+                typeArguments = [elementType];
+                arguments = [element, elementType];
+            };
+        }
+        Anything[] deserialized = val.collect(deserializeElement);
+        assert (is ValueType deserializedOfType = makeSequenceOfType(deserialized, elementType));
+        return deserializedOfType;
+    }
     if (is UnionType<Anything> type) {
         "Union type to deserialize must involve at most one class"
         assert (type.caseTypes.narrow<Class<>>().filter(not(jsonPrimitiveTypes.contains)).shorterThan(2));
