@@ -187,7 +187,9 @@ shared void testSerializeViaString(Anything val, Type<Anything> type, Anything e
 // TODO remove; testDeserialize should use allTests
 shared Test[] deserializeTests = concatenate(
     tests.allPrimitiveTests,
-    tests.primitiveUnionTests
+    tests.primitiveUnionTests,
+    tests.primitiveArrayTests,
+    [tests.arrayOfArrayOfPrimitive]
 );
 
 test
