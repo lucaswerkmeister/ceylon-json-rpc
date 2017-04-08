@@ -14,6 +14,9 @@ import ceylon.json {
 shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
     if (type in jsonPrimitiveTypes) {
         assert (is JsonValue val);
+        if (is Float val, !val.finite) {
+            throw UnserializableValueException();
+        }
         return val;
     }
     if (is Interface<Anything> type,
@@ -30,7 +33,9 @@ shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
         return JsonArray(val.map(serializeElement));
     }
     if (is Class<Anything,Nothing>|Interface<Anything> type) {
-        assert (type.typeArguments.empty);
+        if (!type.typeArguments.empty) {
+            throw UnserializableTypeException();
+        }
         return JsonObject {
             for (attribute in type.getAttributes<>())
                 if (!`Object`.getAttribute<>(attribute.declaration.name) exists)
@@ -52,5 +57,5 @@ shared JsonValue serialize<ValueType>(ValueType val, Type<ValueType> type) {
             throw AssertionError("Unable to serialize value with any case type");
         }
     }
-    throw AssertionError("Type cannot be serialized to JSON: ``type``");
+    throw UnserializableTypeException();
 }
